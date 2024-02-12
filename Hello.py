@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 from streamlit.logger import get_logger
 
 LOGGER = get_logger(__name__)
@@ -42,7 +43,13 @@ def run():
         page_title="dashboard",
         page_icon="👋",
     )
-    st.markdown(" # Študentska **prehrana**")
+    img, heading = st.columns([1,8])
+    image_path = "boni-removebg-preview.png"  # Replace with the actual path to your image file
+    pillow_image = Image.open(image_path)
+    scalar = 0.55
+    new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
+    img.image(new_image)
+    heading.markdown(" # Študentska **prehrana**")
 
     # Read in data
     df = pd.read_csv('data/data.csv')
