@@ -63,13 +63,11 @@ def run():
     # add column for whether there was 1 visit, 1 - 2 visits, or more than 2 visits
     restaurant_counts = pd.DataFrame(restaurant_counts)
     restaurant_counts.columns = ['count']
-    fig1, ax1 = plt.subplots(figsize=(8, 4))
-    # plot the count of visits and colour by visit type
-    restaurant_counts['count'].plot(kind='bar', ax=ax1, color = np.where(restaurant_counts['count'] == 1, 'skyblue', np.where(restaurant_counts['count'] == 2, 'lightcoral', 'lightgreen')))
-    ax1.set_xlabel('Number of visits')
-    ax1.set_ylabel('Count')
-    ax1.set_title('Boni restaurant visits')
-    col11.pyplot(fig1, clear_figure=True)
+    # order the rows according to number of visits
+    restaurant_counts.sort_values(by = "count", ascending=False ,inplace=True)
+    restaurant_counts
+    col11.bar_chart(restaurant_counts)
+    # col11.pyplot(fig1, clear_figure=True)
 
     # Column 2 row 1
     fig2 = plt.figure(figsize=(4, 4.21))
