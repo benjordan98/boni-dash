@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+import altair as alt
 from streamlit.logger import get_logger
 
 LOGGER = get_logger(__name__)
@@ -63,9 +64,7 @@ def run():
     # add column for whether there was 1 visit, 1 - 2 visits, or more than 2 visits
     restaurant_counts = pd.DataFrame(restaurant_counts)
     restaurant_counts.columns = ['count']
-    # order the rows according to number of visits
-    restaurant_counts.sort_values(by = "count", ascending=False ,inplace=True)
-    restaurant_counts
+    #TODO: coloring and sorting
     col11.bar_chart(restaurant_counts)
     # col11.pyplot(fig1, clear_figure=True)
 
@@ -125,6 +124,9 @@ def run():
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4) for color in legend_colors]
     ax3.legend(legend_handles, legend_labels, title='Budget Status')
     ax3.set_title('Boni cost by month')
+    # TODO: altair chart manually
+    # chart = alt.chart()
+    # col21.altair_chart(chart)
     col21.pyplot(fig3)
 
     fig4, ax4 = plt.subplots()
