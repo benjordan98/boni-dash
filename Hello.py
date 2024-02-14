@@ -27,12 +27,18 @@ def boni_usage_per_month(df):
     # group data by month
     by_month = df.groupby(df['date'].dt.to_period('M')).agg('count')['date']
     df_by_month = pd.DataFrame(by_month)
-    df_by_month.columns = ['count']
+    df_by_month.columns = ['used']
     # number of working days in each month
     working_days = [21, 21, 19, 21, 20]
     df_by_month['working_days'] = working_days
     # un-used boni
-    df_by_month['unused'] = df_by_month['working_days'] - df_by_month['count']
+    df_by_month['unused'] = df_by_month['working_days'] - df_by_month['used']
+    df_by_month.drop('working_days', axis = 1, inplace = True)
+    df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
+    # Extract month names
+    df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
+    df.drop('date', axis = 1, inplace = True)
+    df_by_month = pd.melt(df_by_month, id_vars=['month_name'], var_name='type')
     return df_by_month
 
 def pre_process_df(df):
@@ -65,7 +71,13 @@ def run():
     restaurant_counts = pd.DataFrame(restaurant_counts)
     restaurant_counts.columns = ['count']
     #TODO: coloring and sorting
-    col11.bar_chart(restaurant_counts)
+    restaurant_counts
+    chart0 = alt.Chart(restaurant_counts.reset_index()).mark_bar().encode(
+        x = "restaurants",
+        y = "count"
+        # color = "skyblue"
+    )
+    col11.altair_chart(chart0)
     # col11.pyplot(fig1, clear_figure=True)
 
     # Column 2 row 1
@@ -108,42 +120,40 @@ def run():
     col21, col22, col23 = st.columns([1, 1, 1])
 
     # row 2 column 1
-    fig3, ax3 = plt.subplots()
     df_by_month = boni_spend_per_month(df)
-    colors = np.where(df_by_month['cost'] > 50, 'lightcoral', 'skyblue')
-    bars = df_by_month['cost'].plot(kind='bar', ax=ax3, color=colors)
-    # Relabel x-ticks
-    ax3.set_xticklabels(['October', 'November', 'December', 'January', 'February'])
-    # Rotate x-tick labels by 45 degrees
-    plt.xticks(rotation=45)
-    ax3.set_xlabel('Month')
-    ax3.set_ylabel('Cost (EURO)')
-    # Had some trouble with the legend so I did it manually
-    legend_labels = ['Under-budget', 'Over-budget']
-    legend_colors = ['skyblue', 'lightcoral']
-    legend_handles = [plt.Line2D([0], [0], color=color, lw=4) for color in legend_colors]
-    ax3.legend(legend_handles, legend_labels, title='Budget Status')
-    ax3.set_title('Boni cost by month')
-    # TODO: altair chart manually
-    # chart = alt.chart()
-    # col21.altair_chart(chart)
-    col21.pyplot(fig3)
+    df_by_month['Budget Status'] = np.where(df_by_month['cost'] > 50, 'Over-budget', 'Under-budget')
+
+    # Ensure 'date' column is of datetime type
+    df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
+
+    # Extract month names
+    df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
+    month_order = ['October', 'November', 'December', 'January', 'February']
+
+    # Altair chart
+    chart = alt.Chart(df_by_month).mark_bar().encode(
+        x=alt.X('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
+        y=alt.Y('cost:Q', axis=alt.Axis(title='Cost (EURO)')),
+        color=alt.Color('Budget Status:N', scale=alt.Scale(domain=['Under-budget', 'Over-budget'], range=['skyblue', 'lightcoral'])),
+        tooltip=['month_name:N', 'cost:Q', 'Budget Status:N']
+    ).properties(
+        title='Boni cost by month'
+    ).configure_axis(
+        labelAngle=45
+    )
+    col21.altair_chart(chart)
 
     fig4, ax4 = plt.subplots()
     boni_usage_by_month = boni_usage_per_month(df)
-    boni_usage_by_month[['count', 'unused']].plot(kind='bar', ax=ax4, color=['skyblue', 'lightcoral'], stacked=True)
-    # relabel x-ticks
-    ax4.set_xticklabels(['October', 'November', 'December', 'January', 'February'])
-    # make y-ticks integers
-    ax4.yaxis.get_major_locator().set_params(integer=True)
-    # rotate 45 degrees
-    plt.xticks(rotation=45)
-    ax4.set_xlabel('Month')
-    ax4.set_ylabel('Count')
-    ax4.set_title('Boni usage by month')
-    # add legend
-    ax4.legend(['Used', 'Unused'])
-    col22.pyplot(fig4, clear_figure=True)
+    month_order = ['October', 'November', 'December', 'January', 'February']
+    # altair chart
+    chart2 = alt.Chart(boni_usage_by_month).mark_bar().encode(
+        x = alt.X('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
+        y = "value",
+        color = alt.Color('type:N', scale=alt.Scale(domain=['used', 'unused'], range=['skyblue', 'lightcoral']))
+    )
+
+    col22.altair_chart(chart2)
 
     col23.subheader("Summary")
     col23.write("Top Boni: Zito")
