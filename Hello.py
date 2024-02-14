@@ -101,7 +101,7 @@ def run():
     avg_price = round(df['discount_meal_price'].mean(), 2)
     col12.text("💶 Avg Meal Price: " + str(avg_price) + " EURO")
     longest_streak = get_longest_streak(df)
-    col12.text("🗓️Longest Streak: " + str(longest_streak) + " Days")
+    col12.text("🗓️ Longest Streak: " + str(longest_streak) + " Days")
 
     # Second row of plots
     col21, col22= st.columns([1, 1])
