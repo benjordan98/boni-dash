@@ -8,6 +8,10 @@ from streamlit.logger import get_logger
 LOGGER = get_logger(__name__)
 
 def boni_spend_per_month(df):
+    """
+    Takes standard df and 
+    returns boni spend by month df 
+    """
     # group data by month
     by_month = df.groupby(df['date'].dt.to_period('M'))['discount_meal_price'].sum()
     df_by_month = pd.DataFrame(by_month)
@@ -15,6 +19,11 @@ def boni_spend_per_month(df):
     return df_by_month
 
 def boni_usage_per_month(df):
+    """
+    Takes standard df and 
+    returns a df with Used and Unused vouchers
+    by month
+    """
     # group data by month
     by_month = df.groupby(df['date'].dt.to_period('M')).agg('count')['date']
     df_by_month = pd.DataFrame(by_month)
@@ -29,19 +38,32 @@ def boni_usage_per_month(df):
     # Extract month names
     df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
     df_by_month.drop('date', axis = 1, inplace = True)
+    # convert to long format
     df_by_month = pd.melt(df_by_month, id_vars=['month_name'], var_name='Utilisation')
     return df_by_month
 
 def pre_process_df(df):
+    """
+    Any standard pre-processing of df
+    for all charts
+    """
     # datetime
     df['date'] = pd.to_datetime(df['date'])
 
 def get_top_boni(df):
+    """
+    Returns the most visited restaurant
+    """
     # get the name of the restaurant with the most visits
     top_restaurant = df['restaurant'].value_counts().idxmax()
     return top_restaurant
 
 def get_longest_streak(df):
+    """
+    Returns the longest streak 
+    i.e. how many consecutive days 
+    user went to any restaurant
+    """
     # identify the longest streak of consecutive days with a visit to any restaurant
     df['date'] = pd.to_datetime(df['date'])
     df['date_diff'] = df['date'].diff().dt.days
@@ -59,8 +81,10 @@ def run():
         page_icon="🍕",
         layout="wide"
     )
+
+    # Displays title and image
     img, heading = st.columns([1,8])
-    image_path = "boni-removebg-preview.png"  # Replace with the actual path to your image file
+    image_path = "boni-removebg-preview.png"
     pillow_image = Image.open(image_path)
     scalar = 0.55
     new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
@@ -71,10 +95,11 @@ def run():
     df = pd.read_csv('data/data.csv')
     pre_process_df(df)
 
-    # Three columns with different widths
+    # Initialise columns
     col11, col12, = st.columns([2, 1])
+    col21, col22= st.columns([1, 1])
 
-    # Column 1 row 1
+    # Column 1 row 1 - Restaurant visits count
     restaurant_counts = df['restaurant'].value_counts()
     restaurant_counts = pd.DataFrame(restaurant_counts)
     restaurant_counts = restaurant_counts.reset_index()
@@ -88,9 +113,8 @@ def run():
         title = "Restaurants visited"
     )
     col11.altair_chart(chart0, use_container_width=True)
-    # col11.pyplot(fig1, clear_figure=True)
 
-    # Column 2 row 1
+    # Column 2 row 1 - Summary text
     col12.subheader("Summary")
     top_boni = get_top_boni(df)
     col12.text('🏆 Top Boni: ' + top_boni)
@@ -103,20 +127,14 @@ def run():
     longest_streak = get_longest_streak(df)
     col12.text("🗓️ Longest Streak: " + str(longest_streak) + " Days")
 
-    # Second row of plots
-    col21, col22= st.columns([1, 1])
-
-    # row 2 column 1
+    # row 2 column 1 - Boni cost by month
     df_by_month = boni_spend_per_month(df)
     df_by_month['Budget Status'] = np.where(df_by_month['cost'] > 50, 'Over-budget', 'Under-budget')
-
     # Ensure 'date' column is of datetime type
     df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
-
     # Extract month names
     df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
     month_order = ['October', 'November', 'December', 'January', 'February']
-
     # Altair chart
     chart = alt.Chart(df_by_month).mark_bar().encode(
         y=alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
@@ -128,6 +146,7 @@ def run():
     )
     col21.altair_chart(chart, use_container_width=True)
 
+    # row 2 column 2 - Boni utlisation by month
     boni_usage_by_month = boni_usage_per_month(df)
     month_order = ['October', 'November', 'December', 'January', 'February']
     # altair chart
