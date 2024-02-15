@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from PIL import Image
 import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import timedelta
 import time
 from streamlit.logger import get_logger
 
@@ -44,8 +45,9 @@ def update_chart(df_cumsum, plot_container):
 
     # Create a bar chart using Plotly Express
     fig = px.bar(df_melted, x='date', y='Cumulative Visits', color='Restaurant',
-                    labels={'Cumulative Visits': 'Y-axis label'},
-                    template='plotly_dark')
+                labels={'Cumulative Visits': 'Count'},
+                template='plotly_dark',
+                category_orders={'Restaurant': df_melted.groupby('Restaurant')['Cumulative Visits'].sum().sort_values(ascending=False).index})
 
     # Update the container with the new plot
     plot_container.plotly_chart(fig, use_container_width=True)
@@ -60,11 +62,14 @@ def update_chart2(df_cumsum, plot_container):
     df_melted = df_melted.sort_values(by = 'Cumulative Visits', ascending = True)
     # remove restaurants with no visits
     df_melted = df_melted[df_melted['Cumulative Visits'] > 0]
+    df_melted['color'] = np.where(df_melted['Cumulative Visits'] == 1, 'skyblue', np.where(df_melted['Cumulative Visits'] == 2, 'lightcoral', 'lightgreen'))
 
     # Create a bar chart using Plotly Express
     fig = px.bar(df_melted, x='Cumulative Visits', y='Restaurant',
-                    labels={'Cumulative Visits': 'Y-axis label'},
-                    template='plotly_dark')
+                 color = 'color',
+                 labels={'Cumulative Visits': 'Count'},
+                 template='plotly_dark')
+    fig.update(layout_showlegend=False)
 
     # Update the container with the new plot
     plot_container.plotly_chart(fig, use_container_width=True)
@@ -107,14 +112,16 @@ def run():
         update_chart(df_cumsum, plot_container)
 
     # Continually update dynamic chart
-    while run_button:
+    while run_button and st.session_state.end_date < df_cumsum['date'].max():
         update_session_state(df_cumsum, date)
         update_chart(df_cumsum, plot_container)
         update_chart2(df_cumsum, plot_container2)
-        time.sleep(0.5)
+        time.sleep(0.25)
         st.markdown("")
 
     update_chart(df_cumsum, plot_container)
+    update_chart2(df_cumsum, plot_container2)
+    date.write(get_end_date())
 
 if __name__ == "__main__":
     run()

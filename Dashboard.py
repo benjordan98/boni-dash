@@ -85,13 +85,11 @@ def run():
     # hack to deal with persisting text from Dashboard page
     col11, col12, = st.columns([2, 1])
     col21, col22= st.columns([1, 1])
-
     # Clear the content of the columns before displaying new content on page 2
     col11.empty()
     col12.empty()
     col21.empty()
     col22.empty()
-
 
     # Displays title and image
     img, heading = st.columns([1,8])
