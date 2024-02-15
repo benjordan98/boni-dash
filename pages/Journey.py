@@ -43,6 +43,28 @@ def update_chart(df_cumsum, plot_container):
     # Update the container with the new plot
     plot_container.plotly_chart(fig, use_container_width=True)
 
+def update_chart2(df_cumsum, plot_container):
+    # update_session_state()
+
+    # Get the subset of data up to the specified date
+    end_date_subset = st.session_state.end_date
+    df_subset = df_cumsum[(df_cumsum['date'] <= end_date_subset) & (df_cumsum['date'] >= end_date_subset)]
+
+    # Melt DataFrame for Plotly Express
+    df_melted = df_subset.melt(id_vars='date', var_name='Restaurant', value_name='Cumulative Visits')
+    df_melted = df_melted.sort_values(by = 'Cumulative Visits', ascending = True)
+    # remove restaurants with no visits
+    df_melted = df_melted[df_melted['Cumulative Visits'] > 0]
+
+    # Create a bar chart using Plotly Express
+    fig = px.bar(df_melted, x='Cumulative Visits', y='Restaurant',
+                    title='Dynamic Bar Chart',
+                    labels={'Cumulative Visits': 'Y-axis label'},
+                    template='plotly_dark')
+
+    # Update the container with the new plot
+    plot_container.plotly_chart(fig, use_container_width=True)
+
 def run():
     st.set_page_config(
         page_title="Journey",
@@ -73,6 +95,7 @@ def run():
 
     # Create an empty container for the dynamic plot
     plot_container = st.empty()
+    plot_container2 = st.empty()
 
     if reset_button.button("Reset Data"):
         st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
@@ -82,6 +105,7 @@ def run():
     while run_button:
         update_session_state()
         update_chart(df_cumsum, plot_container)
+        update_chart2(df_cumsum, plot_container2)
         time.sleep(0.5)
         st.markdown("")
 
