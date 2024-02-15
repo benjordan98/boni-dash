@@ -20,13 +20,21 @@ def pre_process_df(df):
     df['date'] = pd.to_datetime(df['date'])
 
 # Function to update session state
-def update_session_state():
-    st.session_state.end_date += timedelta(days=1)
+# Function to update session state
+def update_session_state(df_cumsum, date):
+    if 'end_date' not in st.session_state:
+        st.session_state.end_date = df_cumsum['date'].min()
+    else:
+        st.session_state.end_date += timedelta(days=1)
+    date.write(get_end_date())
+
+def get_end_date():
+    if 'end_date' not in st.session_state:
+        return ""
+    return st.session_state.end_date
 
 # Function to update data and plot
 def update_chart(df_cumsum, plot_container):
-    # update_session_state()
-
     # Get the subset of data up to the specified date
     end_date_subset = st.session_state.end_date
     df_subset = df_cumsum[df_cumsum['date'] <= end_date_subset]
@@ -36,7 +44,6 @@ def update_chart(df_cumsum, plot_container):
 
     # Create a bar chart using Plotly Express
     fig = px.bar(df_melted, x='date', y='Cumulative Visits', color='Restaurant',
-                    title='Dynamic Bar Chart',
                     labels={'Cumulative Visits': 'Y-axis label'},
                     template='plotly_dark')
 
@@ -44,8 +51,6 @@ def update_chart(df_cumsum, plot_container):
     plot_container.plotly_chart(fig, use_container_width=True)
 
 def update_chart2(df_cumsum, plot_container):
-    # update_session_state()
-
     # Get the subset of data up to the specified date
     end_date_subset = st.session_state.end_date
     df_subset = df_cumsum[(df_cumsum['date'] <= end_date_subset) & (df_cumsum['date'] >= end_date_subset)]
@@ -58,7 +63,6 @@ def update_chart2(df_cumsum, plot_container):
 
     # Create a bar chart using Plotly Express
     fig = px.bar(df_melted, x='Cumulative Visits', y='Restaurant',
-                    title='Dynamic Bar Chart',
                     labels={'Cumulative Visits': 'Y-axis label'},
                     template='plotly_dark')
 
@@ -88,10 +92,11 @@ def run():
     df_cumsum = fill_missing_dates(df_cumsum)
 
     # Place buttons at the top
-    reset_button, run_pause_button = st.columns(2)
+    reset_button, run_pause_button, date = st.columns(3)
 
     # Checkbox for run/pause
     run_button = run_pause_button.checkbox("Run / Pause", True)
+    date = date.empty()
 
     # Create an empty container for the dynamic plot
     plot_container = st.empty()
@@ -103,7 +108,7 @@ def run():
 
     # Continually update dynamic chart
     while run_button:
-        update_session_state()
+        update_session_state(df_cumsum, date)
         update_chart(df_cumsum, plot_container)
         update_chart2(df_cumsum, plot_container2)
         time.sleep(0.5)
