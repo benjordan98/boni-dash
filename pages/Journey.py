@@ -20,9 +20,12 @@ def fill_missing_dates(df):
 def pre_process_df(df):
     df['date'] = pd.to_datetime(df['date'])
 
+def get_unique_boni(df):
+    return len(df[df['date'] < get_end_date()]['restaurant'].unique())
+
 # Function to update session state
 # Function to update session state
-def update_session_state(df_cumsum, df, date, total_euro):
+def update_session_state(df_cumsum, df, date, unique_boni, total_euro):
     if 'end_date' not in st.session_state:
         st.session_state.end_date = df_cumsum['date'].min()
     else:
@@ -30,6 +33,8 @@ def update_session_state(df_cumsum, df, date, total_euro):
     # update top row
     date.write("Current Date: " + str(get_end_date())[:10])
     total_euro.write("Total Spend: €" + str(round(get_boni_total(df), 2)))
+    unique_boni.write("Tried " + str(get_unique_boni(df)) + " Boni")
+
 
 def get_end_date():
     if 'end_date' not in st.session_state:
@@ -107,10 +112,13 @@ def run():
     df_cumsum = fill_missing_dates(df_cumsum)
 
     # Place buttons at the top
-    date, total_euro, reset_button, run_pause_button = st.columns(4)
+    date, total_euro, unique_boni, reset_button, run_pause_button = st.columns(5)
 
     #total euro
     total_euro_placeholder = total_euro.empty()
+
+    #unique boni tried
+    unique_boni_placeholder = unique_boni.empty()
 
     # Checkbox for run/pause
     run_button = run_pause_button.checkbox("Run / Pause", True)
@@ -125,8 +133,8 @@ def run():
         update_chart(df_cumsum, plot_container)
 
     # Continually update dynamic chart
-    while run_button and st.session_state.end_date < df_cumsum['date'].max():
-        update_session_state(df_cumsum, df, date, total_euro_placeholder)
+    while run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
+        update_session_state(df_cumsum, df, date, unique_boni_placeholder, total_euro_placeholder)
         update_chart(df_cumsum, plot_container)
         update_chart2(df_cumsum, plot_container2)
         time.sleep(0.25)
@@ -136,6 +144,7 @@ def run():
     update_chart2(df_cumsum, plot_container2)
     date.write("Current Date: " + str(get_end_date())[:10])
     total_euro_placeholder.write("Total Spend: €" + str(round(get_boni_total(df), 2)))
+    unique_boni_placeholder.write("Tried " + str(get_unique_boni(df)) + " Boni")
 
 if __name__ == "__main__":
     run()
