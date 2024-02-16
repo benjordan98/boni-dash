@@ -22,12 +22,14 @@ def pre_process_df(df):
 
 # Function to update session state
 # Function to update session state
-def update_session_state(df_cumsum, date):
+def update_session_state(df_cumsum, df, date, total_euro):
     if 'end_date' not in st.session_state:
         st.session_state.end_date = df_cumsum['date'].min()
     else:
         st.session_state.end_date += timedelta(days=1)
-    date.write(get_end_date())
+    # update top row
+    date.write("Current Date: " + str(get_end_date())[:10])
+    total_euro.write("Total Spend: €" + str(round(get_boni_total(df), 2)))
 
 def get_end_date():
     if 'end_date' not in st.session_state:
@@ -62,22 +64,30 @@ def update_chart2(df_cumsum, plot_container):
     df_melted = df_melted.sort_values(by = 'Cumulative Visits', ascending = True)
     # remove restaurants with no visits
     df_melted = df_melted[df_melted['Cumulative Visits'] > 0]
-    df_melted['color'] = np.where(df_melted['Cumulative Visits'] == 1, 'skyblue', np.where(df_melted['Cumulative Visits'] == 2, 'lightcoral', 'lightgreen'))
+    df_melted['Visits'] = np.where(df_melted['Cumulative Visits'] == 1, '1 visit', np.where(df_melted['Cumulative Visits'] == 2, '2 visits', '2+ visits'))
 
     # Create a bar chart using Plotly Express
+    color_discrete_map = {
+        '1 visit' : 'skyblue',
+        '2 visits' : 'lightcoral',
+        '2+ visits': 'lightgreen'
+    }
     fig = px.bar(df_melted, x='Cumulative Visits', y='Restaurant',
-                 color = 'color',
-                 labels={'Cumulative Visits': 'Count'},
-                 template='plotly_dark')
-    fig.update(layout_showlegend=False)
+                color='Visits',
+                labels={'Cumulative Visits': 'Count'},
+                template='plotly_dark',
+                color_discrete_map=color_discrete_map)
 
     # Update the container with the new plot
     plot_container.plotly_chart(fig, use_container_width=True)
 
+def get_boni_total(df):
+    return df[df['date'] < get_end_date()]['discount_meal_price'].sum()
+
 def run():
     st.set_page_config(
         page_title="Journey",
-        page_icon="🍕",
+        page_icon="🗺️",
         layout="wide"
     )
 
@@ -97,7 +107,10 @@ def run():
     df_cumsum = fill_missing_dates(df_cumsum)
 
     # Place buttons at the top
-    reset_button, run_pause_button, date = st.columns(3)
+    date, total_euro, reset_button, run_pause_button = st.columns(4)
+
+    #total euro
+    total_euro_placeholder = total_euro.empty()
 
     # Checkbox for run/pause
     run_button = run_pause_button.checkbox("Run / Pause", True)
@@ -113,7 +126,7 @@ def run():
 
     # Continually update dynamic chart
     while run_button and st.session_state.end_date < df_cumsum['date'].max():
-        update_session_state(df_cumsum, date)
+        update_session_state(df_cumsum, df, date, total_euro_placeholder)
         update_chart(df_cumsum, plot_container)
         update_chart2(df_cumsum, plot_container2)
         time.sleep(0.25)
@@ -121,7 +134,8 @@ def run():
 
     update_chart(df_cumsum, plot_container)
     update_chart2(df_cumsum, plot_container2)
-    date.write(get_end_date())
+    date.write("Current Date: " + str(get_end_date())[:10])
+    total_euro_placeholder.write("Total Spend: €" + str(round(get_boni_total(df), 2)))
 
 if __name__ == "__main__":
     run()
