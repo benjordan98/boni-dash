@@ -88,6 +88,8 @@ def run():
     df_cumsum = fill_missing_dates(df_cumsum)
 
     # For buttons
+    date, total_euro, unique_boni, reset_button, run_pause_button = st.columns(5)
+    
     run_pause_button, reset_button = st.columns(2)
     run_button = run_pause_button.checkbox("Run / Pause", True)
     # Create an empty container for the dynamic plot

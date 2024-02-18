@@ -112,7 +112,15 @@ def run():
     df_cumsum = fill_missing_dates(df_cumsum)
 
     # Place buttons at the top
-    date, total_euro, unique_boni, reset_button, run_pause_button = st.columns(5)
+    date, total_euro, unique_boni, reset_button, run_pause_button, member = st.columns(6)
+    date.empty()
+    total_euro.empty()
+    unique_boni.empty()
+    reset_button.empty()
+    run_pause_button.empty()
+    member.selectbox(
+    'Piran Member',
+    ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'))
 
     #total euro
     total_euro_placeholder = total_euro.empty()

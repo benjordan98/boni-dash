@@ -83,29 +83,33 @@ def run():
     )
 
     # hack to deal with persisting text from Dashboard page
-    col11, col12, = st.columns([2, 1])
+    col11, col12, col13 = st.columns([2, 1, 1])
     col21, col22= st.columns([1, 1])
     # Clear the content of the columns before displaying new content on page 2
     col11.empty()
     col12.empty()
+    col13.empty()
     col21.empty()
     col22.empty()
 
     # Displays title and image
-    img, heading = st.columns([1,8])
+    img, heading, member = st.columns([1,8, 2])
     image_path = "boni-removebg-preview.png"
     pillow_image = Image.open(image_path)
     scalar = 0.55
     new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
     img.image(new_image)
     heading.markdown(" # Študentska **prehrana**")
+    member.selectbox(
+    'Piran Member',
+    ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'))
 
     # Read in data
     df = pd.read_csv('data/data_18_02.csv')
     pre_process_df(df)
 
     # Initialise columns
-    col11, col12, = st.columns([2, 1])
+    col11, col12 = st.columns([2, 1])
     col21, col22= st.columns([1, 1])
 
     # Column 1 row 1 - Restaurant visits count
