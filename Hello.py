@@ -75,12 +75,26 @@ def get_longest_streak(df):
     longest_streak = streaks.max()
     return longest_streak
 
+def call_back():
+    st.write(set_member())
+
+def set_member():
+    # save current member view
+    if "my_member" not in st.session_state:
+        st.session_state.member = "Hubert"
+    else:
+        st.session_state.my_member
+
 def run():
     st.set_page_config(
         page_title="Dashboard",
         page_icon="🍕",
         layout="wide"
     )
+
+    # save current member view
+    if "my_member" not in st.session_state:
+        st.session_state.member = "Hubert"
 
     # hack to deal with persisting text from Dashboard page
     col11, col12, col13 = st.columns([2, 1, 1])
@@ -101,8 +115,9 @@ def run():
     img.image(new_image)
     heading.markdown(" # Študentska **prehrana**")
     member.selectbox(
-    'Piran Member',
-    ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'))
+        'Piran Member',
+        ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'),
+        key='my_member', on_change=call_back())
 
     # Read in data
     df = pd.read_csv('data/data_18_02.csv')
