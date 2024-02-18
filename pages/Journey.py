@@ -131,6 +131,7 @@ def run():
     if reset_button.button("Reset Data"):
         st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
         update_chart(df_cumsum, plot_container)
+        update_chart2(df_cumsum, plot_container2)
 
     # Continually update dynamic chart
     while run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
