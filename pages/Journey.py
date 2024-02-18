@@ -106,7 +106,7 @@ def run():
     heading.markdown(" # Študentska **prehrana**")
 
     # Read in data
-    df = pd.read_csv('data/data.csv')
+    df = pd.read_csv('data/data_18_02.csv')
     pre_process_df(df)
     df_cumsum = cum_sum_restaurant_visits(df)
     df_cumsum = fill_missing_dates(df_cumsum)
