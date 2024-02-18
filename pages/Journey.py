@@ -119,8 +119,11 @@ def run():
     reset_button.empty()
     run_pause_button.empty()
     member.selectbox(
-    'Piran Member',
-    ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'))
+        label = 'Piran Member',
+        options = st.session_state.members,
+        key='member',
+        index = st.session_state.index)
+    st.session_state.index = st.session_state.members.index(st.session_state.member)
 
     #total euro
     total_euro_placeholder = total_euro.empty()

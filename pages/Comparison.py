@@ -87,8 +87,14 @@ def run():
     df_cumsum = cum_sum_restaurant_visits(df)
     df_cumsum = fill_missing_dates(df_cumsum)
 
-    # For buttons
-    date, total_euro, unique_boni, reset_button, run_pause_button = st.columns(5)
+    # clear from previous pages
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.empty()
+    col2.empty()
+    col3.empty()
+    col4.empty()
+    col5.empty()
+    col6.empty()
     
     run_pause_button, reset_button = st.columns(2)
     run_button = run_pause_button.checkbox("Run / Pause", True)

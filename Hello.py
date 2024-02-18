@@ -75,16 +75,6 @@ def get_longest_streak(df):
     longest_streak = streaks.max()
     return longest_streak
 
-def call_back():
-    st.write(set_member())
-
-def set_member():
-    # save current member view
-    if "my_member" not in st.session_state:
-        st.session_state.member = "Hubert"
-    else:
-        st.session_state.my_member
-
 def run():
     st.set_page_config(
         page_title="Dashboard",
@@ -92,9 +82,12 @@ def run():
         layout="wide"
     )
 
-    # save current member view
-    if "my_member" not in st.session_state:
-        st.session_state.member = "Hubert"
+    if 'index' not in st.session_state:
+        st.session_state.index = 0
+
+    if 'members' not in st.session_state:
+        st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
+                                    'Oskar', 'Linn', 'Sofia')
 
     # hack to deal with persisting text from Dashboard page
     col11, col12, col13 = st.columns([2, 1, 1])
@@ -115,9 +108,11 @@ def run():
     img.image(new_image)
     heading.markdown(" # Študentska **prehrana**")
     member.selectbox(
-        'Piran Member',
-        ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 'Oskar', 'Linn', 'Sofia'),
-        key='my_member', on_change=call_back())
+        label = 'Piran Member',
+        options = st.session_state.members,
+        key='member',
+        index = st.session_state.index)
+    st.session_state.index = st.session_state.members.index(st.session_state.member)
 
     # Read in data
     df = pd.read_csv('data/data_18_02.csv')
