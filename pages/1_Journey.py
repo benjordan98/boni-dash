@@ -115,7 +115,7 @@ def run():
     date, total_euro, unique_boni, reset_button, run_pause_button, member = st.columns(6)
     date.empty()
     total_euro.empty()
-    unique_boni.empty()
+    unique_boni.empty() 
     reset_button.empty()
     run_pause_button.empty()
     member.selectbox(
