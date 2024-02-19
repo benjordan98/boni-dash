@@ -11,9 +11,8 @@ LOGGER = get_logger(__name__)
 
 
 # Processing dataframe functions
-# TODO: this is used across multiple pages so abstract it!
-def pre_process_df(df):
-    df['date'] = pd.to_datetime(df['date'])
+def select_member_df(df):
+    return df[df['Member'] == st.session_state.member]
 
 def cum_sum_restaurant_visits(df):
     df2 = df.groupby([pd.Grouper(key="date", freq="D"), "restaurant"]).size().unstack().fillna(0).reset_index()
@@ -105,6 +104,9 @@ def run():
         page_icon="🗺️",
         layout="wide"
     )
+    #TODO: bug with if I click on Comparison or Horse Race it forgets about member!
+    if 'member' not in st.session_state:
+        st.session_state.member = 'Ben'
 
     # TODO: this is on every page - abstract it
     # Displays title and image
@@ -119,8 +121,8 @@ def run():
     heading.markdown(" # Študentska **prehrana**")
 
     # Read in data
-    df = pd.read_csv('data/data_18_02.csv')
-    pre_process_df(df)
+    # Load data
+    df = select_member_df(st.session_state.combined_df)
     
     # Create dataframe for journey plots
     df_cumsum = cum_sum_restaurant_visits(df)
@@ -139,9 +141,7 @@ def run():
         label = 'Piran Member',
         options = st.session_state.members,
         key='member',
-        index = st.session_state.index)
-    # update index
-    st.session_state.index = st.session_state.members.index(st.session_state.member)
+        index = st.session_state.members.index(st.session_state.member))
 
     # set up objects for top row
     #total euro

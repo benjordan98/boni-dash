@@ -8,21 +8,22 @@ import time
 from streamlit_js_eval import streamlit_js_eval
 
 # Processing dataframe functions
-# TODO: this is used across multiple pages so abstract it!
-def pre_process_df(df):
-    df['date'] = pd.to_datetime(df['date'])
-
 def cum_sum_restaurant_visits(df):
     df2 = df.groupby([pd.Grouper(key="date", freq="D"), "restaurant"]).size().unstack().fillna(0).reset_index()
     return df2
 
 def fill_missing_dates(df):
     """
-    Make dataframe continuos by date for dynamic plotting!
+    Make dataframe continuous by date for dynamic plotting!
     """
+    # add a new row for the last recorded date of all members
+    if df['date'].max() < st.session_state.last_recorded_date:
+        new_row = pd.DataFrame(0, index=[0], columns=df.columns)
+        new_row['date'] = st.session_state.last_recorded_date
+        df = pd.concat([df, new_row], ignore_index=True)
+    # then fill in the gaps
     df_filled = df.set_index('date').resample('D').first().fillna(0).cumsum()
     return df_filled.reset_index()
-
 
 # Session state functions
 def update_session_state(df):
@@ -47,6 +48,7 @@ def update_chart(df, plot_container):
         df_cumsum = cum_sum_restaurant_visits(df_member)
         # fill missing values
         df_cumsum = fill_missing_dates(df_cumsum)
+        # Padd the df with zeros to max date for member in dataframe
         df_subset = df_cumsum[(df_cumsum['date'] <= end_date_subset) & (df_cumsum['date'] >= end_date_subset)]
         # Melt DataFrame for Plotly Express
         df_melted_member = df_subset.melt(id_vars='date', var_name='Restaurant', value_name='Cumulative Visits')
@@ -56,7 +58,6 @@ def update_chart(df, plot_container):
     # remove restaurants with no visits
     df_melted = df_melted[df_melted['Cumulative Visits'] > 0]
     # sort member by which member has the most visits!
-    # df_melted
 
     fig = px.bar(df_melted, x='Cumulative Visits', y='Member',
                  title= "Boni Horse Race",
@@ -93,10 +94,8 @@ def run():
     # title
     heading.markdown(" # Študentska **prehrana**")
 
-    # TODO: should make df a session state
-    # Read in data
-    df = pd.read_csv('data/combined_data.csv')
-    pre_process_df(df)
+    # for ease of access
+    horse_race_df = st.session_state.combined_df
 
     # # clear from previous pages
     col1, col2, col3, col4, col5, col6 = st.columns(6)
@@ -114,20 +113,22 @@ def run():
     plot_container = st.empty()
 
     if reset_button.button("Reset Data"):
-        reset(df, plot_container)
+        reset(horse_race_df, plot_container)
 
-    while run_button and (get_end_date() == "" or get_end_date() < df['date'].max()):
-        update_session_state(df)
-        update_chart(df, plot_container)
+    while run_button and (get_end_date() == "" or get_end_date() < horse_race_df['date'].max()):
+        update_session_state(horse_race_df)
+        update_chart(horse_race_df, plot_container)
         date.write("Current Date: " + str(get_end_date())[:10])
         time.sleep(0.25)
         st.markdown("")
 
     # for paused version
     if 'end_date' not in st.session_state:
-        st.session_state.end_date = df['date'].min() - timedelta(1)
+        horse_race_df
+        st.session_state.end_date = horse_race_df['date'].min() - timedelta(1)
 
-    update_chart(df, plot_container)
+    # when paused
+    update_chart(horse_race_df, plot_container)
     # update date
     date.write("Current Date: " + str(get_end_date())[:10])
 

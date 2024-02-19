@@ -5,13 +5,8 @@ from PIL import Image
 import altair as alt
 
 # Processing dataframe functions
-def pre_process_df(df):
-    """
-    Any standard pre-processing of df
-    for all charts
-    """
-    # datetime
-    df['date'] = pd.to_datetime(df['date'])
+def select_member_df(df):
+    return df[df['Member'] == st.session_state.member]
 
 def boni_spend_per_month(df):
     """
@@ -80,6 +75,9 @@ def run():
         page_icon="🍕",
         layout="wide"
     )
+    #TODO: bug with if I click on Comparison or Horse Race it forgets about member!
+    if 'member' not in st.session_state:
+        st.session_state.member = 'Ben'
 
     # hack to deal with persisting text from Dashboard page
     col11, col12, col13 = st.columns([2, 1, 1])
@@ -106,12 +104,10 @@ def run():
         label = 'Piran Member',
         options = st.session_state.members,
         key='member',
-        index = st.session_state.index)
-    st.session_state.index = st.session_state.members.index(st.session_state.member)
-    # Read in data
-    df = pd.read_csv('data/data_18_02.csv')
-    # any pre-processing needed
-    pre_process_df(df)
+        index = st.session_state.members.index(st.session_state.member))
+    
+    # Load data
+    df = select_member_df(st.session_state.combined_df)
     # Initialise columns
     col11, col12 = st.columns([2, 1])
     col21, col22= st.columns([1, 1])
