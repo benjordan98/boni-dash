@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 from datetime import timedelta
 import time
+from streamlit_js_eval import streamlit_js_eval
 
 # Processing dataframe functions
 # TODO: this is used across multiple pages so abstract it!
@@ -69,7 +70,6 @@ def run():
         page_icon="🍕",
         layout="wide"
     )
-
     # TODO: this is on every page - abstract it
     # Displays title and image
     img, heading, member = st.columns([1,8, 2])
@@ -91,7 +91,7 @@ def run():
     df_cumsum = cum_sum_restaurant_visits(df)
     df_cumsum = fill_missing_dates(df_cumsum)
 
-    # clear from previous pages
+    # # clear from previous pages
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.empty()
     col2.empty()
@@ -100,8 +100,9 @@ def run():
     col5.empty()
     col6.empty()
     
-    run_button_placeholder, reset_button = st.columns(2)
-    run_button = run_button_placeholder.checkbox("Run / Pause", True)
+    date_placeholder, run_button_placeholder, reset_button = st.columns(3)
+    run_button = run_button_placeholder.checkbox("Run / Pause", False)
+    date = date_placeholder.empty()
     # Create an empty container for the dynamic plot
     plot_container = st.empty()
 
@@ -111,11 +112,14 @@ def run():
     while run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
         update_session_state(df_cumsum)
         update_chart(df_cumsum, plot_container)
+        date.write("Current Date: " + str(get_end_date())[:10])
         time.sleep(0.25)
         st.markdown("")
 
     # for paused version
     update_chart(df_cumsum, plot_container)
+    # update date
+    date.write("Current Date: " + str(get_end_date())[:10])
 
 if __name__ == "__main__":
     run()

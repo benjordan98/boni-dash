@@ -6,3 +6,4 @@ streamlit
 Pillow
 plotly
 time
+streamlit_js_eval

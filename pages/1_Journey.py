@@ -134,6 +134,7 @@ def run():
     unique_boni_placeholder.empty() 
     reset_button.empty()
     run_button_placeholder.empty()
+
     member.selectbox(
         label = 'Piran Member',
         options = st.session_state.members,
@@ -148,7 +149,7 @@ def run():
     #unique boni tried
     unique_boni = unique_boni_placeholder.empty()
     # Checkbox for run/pause
-    run_button = run_button_placeholder.checkbox("Run / Pause", True)
+    run_button = run_button_placeholder.checkbox("Run / Pause", False)
     # date placeholder
     date = date.empty()
     # Create an empty container for the dynamic plot
@@ -172,6 +173,7 @@ def run():
         update_chart_bar(df_cumsum, plot_container_bar)
         # one day is 0.25 seconds
         time.sleep(0.25)
+        total_euro.empty()
         st.markdown("")
 
     # For paused version
