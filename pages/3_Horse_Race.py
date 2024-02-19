@@ -25,9 +25,9 @@ def fill_missing_dates(df):
 
 
 # Session state functions
-def update_session_state(df_cumsum):
+def update_session_state(df):
     if 'end_date' not in st.session_state:
-        st.session_state.end_date = df_cumsum['date'].min()
+        st.session_state.end_date = df['date'].min()
     else:
         st.session_state.end_date += timedelta(days=1)
 
@@ -37,31 +37,42 @@ def get_end_date():
     return st.session_state.end_date
 
 # Update chart
-def update_chart(df_cumsum, plot_container):
+def update_chart(df, plot_container):
     # Get the subset of data up to the specified date
     end_date_subset = st.session_state.end_date
-    df_subset = df_cumsum[(df_cumsum['date'] <= end_date_subset) & (df_cumsum['date'] >= end_date_subset)]
-
-    # Melt DataFrame for Plotly Express
-    df_melted = df_subset.melt(id_vars='date', var_name='Restaurant', value_name='Cumulative Visits')
-    df_melted['Member'] = 'Ben'
+    df_melted = pd.DataFrame()
+    # for each member perform following separately and then combine the df
+    for member in df['Member'].unique():
+        df_member = df[df['Member'] == member]
+        df_cumsum = cum_sum_restaurant_visits(df_member)
+        # fill missing values
+        df_cumsum = fill_missing_dates(df_cumsum)
+        df_subset = df_cumsum[(df_cumsum['date'] <= end_date_subset) & (df_cumsum['date'] >= end_date_subset)]
+        # Melt DataFrame for Plotly Express
+        df_melted_member = df_subset.melt(id_vars='date', var_name='Restaurant', value_name='Cumulative Visits')
+        df_melted_member['Member'] = member
+        df_melted = pd.concat([df_melted, df_melted_member])
  
     # remove restaurants with no visits
     df_melted = df_melted[df_melted['Cumulative Visits'] > 0]
+    # sort member by which member has the most visits!
+    # df_melted
 
     fig = px.bar(df_melted, x='Cumulative Visits', y='Member',
                  title= "Boni Horse Race",
                  color='Restaurant',
                  labels={'Cumulative Visits': 'Count'},
                  template='plotly_dark',
-                 category_orders={'Restaurant': df_melted.groupby('Restaurant')['Cumulative Visits'].sum().sort_values(ascending=False).index})
+                 category_orders={'Restaurant': df_melted.groupby('Restaurant')['Cumulative Visits'].sum().sort_values(ascending=False).index,
+                                  'Member': df_melted.groupby('Member')['Cumulative Visits'].sum().sort_values(ascending=False).index})
 
+    # sort by members most boni
     # Update the container with the new plot
     plot_container.plotly_chart(fig, use_container_width=True)
 
-def reset(df_cumsum, plot_container):
-    st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
-    update_chart(df_cumsum, plot_container)
+def reset(df, plot_container):
+    st.session_state.end_date = df['date'].min() - timedelta(1)
+    update_chart(df, plot_container)
 
 
 def run():
@@ -84,12 +95,8 @@ def run():
 
     # TODO: should make df a session state
     # Read in data
-    df = pd.read_csv('data/data_18_02.csv')
-    # TODO: for now just add member column with my name
-    df['Member'] = 'Ben'
+    df = pd.read_csv('data/combined_data.csv')
     pre_process_df(df)
-    df_cumsum = cum_sum_restaurant_visits(df)
-    df_cumsum = fill_missing_dates(df_cumsum)
 
     # # clear from previous pages
     col1, col2, col3, col4, col5, col6 = st.columns(6)
@@ -107,17 +114,20 @@ def run():
     plot_container = st.empty()
 
     if reset_button.button("Reset Data"):
-        reset(df_cumsum, plot_container)
+        reset(df, plot_container)
 
-    while run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
-        update_session_state(df_cumsum)
-        update_chart(df_cumsum, plot_container)
+    while run_button and (get_end_date() == "" or get_end_date() < df['date'].max()):
+        update_session_state(df)
+        update_chart(df, plot_container)
         date.write("Current Date: " + str(get_end_date())[:10])
         time.sleep(0.25)
         st.markdown("")
 
     # for paused version
-    update_chart(df_cumsum, plot_container)
+    if 'end_date' not in st.session_state:
+        st.session_state.end_date = df['date'].min() - timedelta(1)
+
+    update_chart(df, plot_container)
     # update date
     date.write("Current Date: " + str(get_end_date())[:10])
 

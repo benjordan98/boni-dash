@@ -177,6 +177,8 @@ def run():
         st.markdown("")
 
     # For paused version
+    if 'end_date' not in st.session_state:
+        st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
     update_chart_stacked(df_cumsum, plot_container_stacked)
     update_chart_bar(df_cumsum, plot_container_bar)
     update_summary_stats(df, date, total_euro, unique_boni)
