@@ -4,6 +4,15 @@ import numpy as np
 from PIL import Image
 import altair as alt
 
+# Processing dataframe functions
+def pre_process_df(df):
+    """
+    Any standard pre-processing of df
+    for all charts
+    """
+    # datetime
+    df['date'] = pd.to_datetime(df['date'])
+
 def boni_spend_per_month(df):
     """
     Takes standard df and 
@@ -39,14 +48,7 @@ def boni_usage_per_month(df):
     df_by_month = pd.melt(df_by_month, id_vars=['month_name'], var_name='Utilisation')
     return df_by_month
 
-def pre_process_df(df):
-    """
-    Any standard pre-processing of df
-    for all charts
-    """
-    # datetime
-    df['date'] = pd.to_datetime(df['date'])
-
+# get Boni summary stats functions
 def get_top_boni(df):
     """
     Returns the most visited restaurant
@@ -79,13 +81,6 @@ def run():
         layout="wide"
     )
 
-    if 'index' not in st.session_state:
-        st.session_state.index = 0
-
-    if 'members' not in st.session_state:
-        st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
-                                    'Oskar', 'Linn', 'Sofia')
-
     # hack to deal with persisting text from Dashboard page
     col11, col12, col13 = st.columns([2, 1, 1])
     col21, col22= st.columns([1, 1])
@@ -98,28 +93,30 @@ def run():
 
     # Displays title and image
     img, heading, member = st.columns([1,8, 2])
+    # image
     image_path = "boni-removebg-preview.png"
     pillow_image = Image.open(image_path)
     scalar = 0.55
     new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
     img.image(new_image)
+    # title
     heading.markdown(" # Študentska **prehrana**")
+    # Select who's dashboard to view
     member.selectbox(
         label = 'Piran Member',
         options = st.session_state.members,
         key='member',
         index = st.session_state.index)
     st.session_state.index = st.session_state.members.index(st.session_state.member)
-
     # Read in data
     df = pd.read_csv('data/data_18_02.csv')
+    # any pre-processing needed
     pre_process_df(df)
-
     # Initialise columns
     col11, col12 = st.columns([2, 1])
     col21, col22= st.columns([1, 1])
 
-    # Column 1 row 1 - Restaurant visits count
+    # Row 1 column 1 - Restaurant visits count
     restaurant_counts = df['restaurant'].value_counts()
     restaurant_counts = pd.DataFrame(restaurant_counts)
     restaurant_counts = restaurant_counts.reset_index()
@@ -134,7 +131,7 @@ def run():
     )
     col11.altair_chart(chart0, use_container_width=True)
 
-    # Column 2 row 1 - Summary text
+    # Row 1 column 2 - Summary text
     col12.subheader("Summary")
     top_boni = get_top_boni(df)
     col12.text('🏆 Top Boni: ' + top_boni)
@@ -147,7 +144,7 @@ def run():
     longest_streak = get_longest_streak(df)
     col12.text("🗓️ Longest Streak: " + str(longest_streak) + " Days")
 
-    # row 2 column 1 - Boni cost by month
+    # Row 2 column 1 - Boni cost by month
     df_by_month = boni_spend_per_month(df)
     df_by_month['Budget Status'] = np.where(df_by_month['cost'] > 50, 'Over-budget', 'Under-budget')
     # Ensure 'date' column is of datetime type
@@ -166,9 +163,8 @@ def run():
     )
     col21.altair_chart(chart, use_container_width=True)
 
-    # row 2 column 2 - Boni utlisation by month
+    # Row 2 column 2 - Boni utlisation by month
     boni_usage_by_month = boni_usage_per_month(df)
-    month_order = ['October', 'November', 'December', 'January', 'February']
     # altair chart
     chart2 = alt.Chart(boni_usage_by_month).mark_bar().encode(
         y = alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
@@ -182,7 +178,6 @@ def run():
     ).properties(
         title = "Boni Utilisation by Month"
     )
-
     col22.altair_chart(chart2, use_container_width=True)
 
 run()
