@@ -77,6 +77,8 @@ def run():
     chart2 = alt.Chart(money_spent_by_member).mark_bar().encode(
         y = alt.Y('Member:N', sort='-x', axis=alt.Axis(title='Member', labels=True, ticks=True)),
         x = alt.X('Total:Q', title = 'Total €')
+    ).configure_mark(
+        color = "#23BDF3"
     ).properties(
         title = '💰 Total Spend'
     )

@@ -33,7 +33,8 @@ def boni_usage_per_month(df):
     working_days = [21, 21, 19, 21, 20]
     df_by_month['working_days'] = working_days
     # un-used boni
-    df_by_month['Unused'] = df_by_month['working_days'] - df_by_month['Used']
+    # df_by_month['Unused'] = df_by_month['working_days'] - df_by_month['Used']
+    df_by_month['Unused'] = np.where(df_by_month['working_days'] < df_by_month['Used'], 0, df_by_month['working_days'] - df_by_month['Used'])
     df_by_month.drop('working_days', axis = 1, inplace = True)
     df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
     # Extract month names
@@ -152,7 +153,7 @@ def run():
     chart = alt.Chart(df_by_month).mark_bar().encode(
         y=alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
         x=alt.X('cost:Q', axis=alt.Axis(title='Cost (EURO)')),
-        color=alt.Color('Budget Status:N', scale=alt.Scale(domain=['Under-budget', 'Over-budget'], range=['skyblue', 'lightcoral'])),
+        color=alt.Color('Budget Status:N', scale=alt.Scale(domain=['Under-budget', 'Over-budget'], range=['#23BDF3', '#FFA500'])),
         tooltip=['month_name:N', 'cost:Q', 'Budget Status:N']
     ).properties(
         title='Boni Cost by Month'
@@ -165,7 +166,7 @@ def run():
     chart2 = alt.Chart(boni_usage_by_month).mark_bar().encode(
         y = alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month', labels=True, ticks=True)),
         x = "value",
-        color = alt.Color('Utilisation:N', scale=alt.Scale(domain=['Unused', 'Used'], range=['lightcoral', 'skyblue'])),
+        color = alt.Color('Utilisation:N', scale=alt.Scale(domain=['Unused', 'Used'], range=['#FFA500', '#23BDF3'])),
         order=alt.Order(
         # Sort the segments of the bars by this field
         'Utilisation',
