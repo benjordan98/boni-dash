@@ -11,6 +11,15 @@ LOGGER = get_logger(__name__)
 
 
 # Processing dataframe functions
+def pre_process_df(df):
+    """
+    Any standard pre-processing of df
+    for all charts
+    """
+    # datetime
+    df['date'] = pd.to_datetime(df['date'])
+    return df
+
 def select_member_df(df):
     return df[df['Member'] == st.session_state.member]
 
@@ -104,9 +113,21 @@ def run():
         page_icon="🗺️",
         layout="wide"
     )
-    #TODO: bug with if I click on Comparison or Horse Race it forgets about member!
+  # inter page variables
     if 'member' not in st.session_state:
         st.session_state.member = 'Ben'
+    # list of members
+    if 'members' not in st.session_state:
+        # st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
+        #                             'Oskar', 'Linn', 'Sofia')
+        st.session_state.members = ('Ben', 'Oskar')
+        
+    if 'combined_df' not in st.session_state:
+        combined_df = pre_process_df(pd.read_csv('data/combined_data.csv'))
+        st.session_state.combined_df = combined_df
+
+    if 'last_recorded_date' not in st.session_state:
+        st.session_state.last_recorded_date = st.session_state.combined_df['date'].max()
 
     # TODO: this is on every page - abstract it
     # Displays title and image
