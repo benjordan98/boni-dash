@@ -29,6 +29,31 @@ def most_avg_boni(df):
 def who_most_one_boni(df):
     return df.groupby('Member')['restaurant'].value_counts().idxmax()[0]
 
+def who_ate_most_mcdonalds(df):
+    # Filter the DataFrame to include only rows where the restaurant contains "McDonald's"
+    mcdonalds_data = df[df['restaurant'].str.contains("McDonald's", case=False, na=False)]
+    # Group by Member and count the occurrences
+    mcdonalds_counts = mcdonalds_data['Member'].value_counts()
+    # Get the member who ate at a McDonald's restaurant the most
+    most_mcdonalds_member = mcdonalds_counts.idxmax()
+    return most_mcdonalds_member
+
+def who_most_free_boni(df):
+    # Filter the DataFrame to include only rows where 'discount_meal_price' is 0
+    df = df[df['discount_meal_price'] == 0]
+    
+    # Group by 'Member' and count the occurrences
+    member_counts = df['Member'].value_counts()
+    
+    # Get the member who had the most free boni
+    most_free_boni_member = member_counts.idxmax()
+    
+    return most_free_boni_member
+
+def who_used_least(df):
+    return df['Member'].value_counts().idxmin()
+
+
 def run():
     st.set_page_config(
         page_title="Journey",
@@ -65,12 +90,16 @@ def run():
 
     df = st.session_state.combined_df
 
-    most_boni, most_unique_boni, most_frugal, quality, most_one_boni = st.columns(5)
+    most_boni, most_unique_boni, most_frugal, quality = st.columns(4)
     most_boni.text('🏆 Most Boni: ' + who_ate_most(df))
     most_unique_boni.text('🆕 Most Unique Boni: ' + who_most_unique(df))
     most_frugal.text('🏦 Most Frugal: ' + least_avg_boni(df))
     quality.text('🐏 Life is not Sheep: ' + most_avg_boni(df))
+    most_one_boni, most_maccies, most_free, least_boni = st.columns(4)
     most_one_boni.text('💤 Most on one Boni: ' + who_most_one_boni(df))
+    most_maccies.text("🍔 Most McDonald's: " + who_ate_most_mcdonalds(df))
+    most_free.text("👩‍🎓 Most Free Boni: " + who_most_free_boni(df))
+    least_boni.text('👎 Least Boni: ' + who_used_least(df))
 
 
     #now for some comparison plots
