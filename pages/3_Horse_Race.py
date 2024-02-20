@@ -97,10 +97,10 @@ def run():
     if 'members' not in st.session_state:
         # st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
         #                             'Oskar', 'Linn', 'Sofia')
-        st.session_state.members = ('Ben', 'Oskar')
+        st.session_state.members = ('Ben', 'Oskar', 'Tonda')
         
     if 'combined_df' not in st.session_state:
-        combined_df = pre_process_df(pd.read_csv('data/combined_data.csv'))
+        combined_df = pre_process_df(pd.read_csv('data/combined_data2.csv'))
         st.session_state.combined_df = combined_df
 
     if 'last_recorded_date' not in st.session_state:
