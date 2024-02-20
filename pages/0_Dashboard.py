@@ -15,6 +15,8 @@ def pre_process_df(df):
     return df
 
 def select_member_df(df):
+    # order df by date
+    df = df.sort_values(by = 'date')
     return df[df['Member'] == st.session_state.member]
 
 def boni_spend_per_month(df):
@@ -70,9 +72,9 @@ def get_longest_streak(df):
     """
     # identify the longest streak of consecutive days with a visit to any restaurant
     df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values(by = 'date') # just in case
     df['date_diff'] = df['date'].diff().dt.days
     df['date_diff'] = df['date_diff'].fillna(1)
-    print(df)
     df['date_diff'] = df['date_diff'].astype(int)
     df['streak'] = (df['date_diff'] != 1).cumsum()
     streaks = df.groupby('streak').size()
