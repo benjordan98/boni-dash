@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image
 from datetime import timedelta
 import time
-from streamlit_js_eval import streamlit_js_eval
 
 def pre_process_df(df):
     """
