@@ -55,7 +55,7 @@ def run():
         key='member',
         index = st.session_state.members.index(st.session_state.member))
     # blah blah blah
-    st.write("👋 Welcome. This is a Mini Data App about the Piran Groups Boni Journey...")
+    st.write("👋 Welcome. This is a little Mini Data App about the Piran Group's Boni Journey. Enjoy 😋")
 
 if __name__ == "__main__":
     run()
