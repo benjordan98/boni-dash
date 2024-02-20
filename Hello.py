@@ -57,5 +57,10 @@ def run():
     # blah blah blah
     st.write("👋 Welcome. This is a little Mini Data App about the Piran Group's Boni Journey. Enjoy 😋")
 
+    # images come with width 960 - seems too much rescale
+    head = Image.open('Images/' + st.session_state.member + '.png')
+    head = head.resize((int(head.size[0] * 0.75), int(head.size[1]*0.75)))
+    st.image(head)
+
 if __name__ == "__main__":
     run()
