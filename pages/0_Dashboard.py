@@ -73,6 +73,8 @@ def get_longest_streak(df):
     # identify the longest streak of consecutive days with a visit to any restaurant
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(by = 'date') # just in case
+    # date is just to the precision of day
+    df = df.drop_duplicates(subset = 'date')
     df['date_diff'] = df['date'].diff().dt.days
     df['date_diff'] = df['date_diff'].fillna(1)
     df['date_diff'] = df['date_diff'].astype(int)
