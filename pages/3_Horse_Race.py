@@ -1,19 +1,9 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-import numpy as np
-from PIL import Image
 from datetime import timedelta
 import time
-
-def pre_process_df(df):
-    """
-    Any standard pre-processing of df
-    for all charts
-    """
-    # datetime
-    df['date'] = pd.to_datetime(df['date'])
-    return df
+from utils import create_header_triplet, pre_process_df, initialise_session_states
 
 # Processing dataframe functions
 def cum_sum_restaurant_visits(df):
@@ -84,77 +74,54 @@ def reset(df, plot_container):
     update_chart(df, plot_container)
 
 
-def run():
+def setup_page():
     st.set_page_config(
         page_title="Dashboard",
         page_icon="🍕",
         layout="wide"
     )
-      # inter page variables
-    if 'member' not in st.session_state:
-        st.session_state.member = 'Ben'
-    # list of members
-    if 'members' not in st.session_state:
-        # st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
-        #                             'Oskar', 'Linn', 'Sofia')
-        st.session_state.members = ('Ben', 'Oskar', 'Tonda')
-        
-    if 'combined_df' not in st.session_state:
-        combined_df = pre_process_df(pd.read_csv('data/combined_data2.csv'))
-        st.session_state.combined_df = combined_df
+    initialise_session_states()
+    create_header_triplet()
 
-    if 'last_recorded_date' not in st.session_state:
-        st.session_state.last_recorded_date = st.session_state.combined_df['date'].max()
+def clear_previous_page():
+    cols = st.columns(6)
+    for col in cols:
+        col.empty()
 
-    # TODO: this is on every page - abstract it
-    # Displays title and image
-    img, heading, member = st.columns([1,8, 2])
-    # image
-    image_path = "boni-removebg-preview.png"
-    pillow_image = Image.open(image_path)
-    scalar = 0.55
-    new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
-    img.image(new_image)
-    # title
-    heading.markdown(" # Študentska **prehrana**")
-
-    # for ease of access
-    horse_race_df = st.session_state.combined_df
-
-    # # clear from previous pages
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.empty()
-    col2.empty()
-    col3.empty()
-    col4.empty()
-    col5.empty()
-    col6.empty()
-    
-    date_placeholder, run_button_placeholder, reset_button = st.columns(3)
+def create_controls():
+    date_placeholder, run_button_placeholder, reset_button_placeholder = st.columns(3)
     run_button = run_button_placeholder.checkbox("Run / Pause", False)
-    date = date_placeholder.empty()
-    # Create an empty container for the dynamic plot
+    date_display = date_placeholder.empty()
     plot_container = st.empty()
+    
+    return run_button, date_display, plot_container, reset_button_placeholder
 
+def reset_if_requested(reset_button, horse_race_df, plot_container):
     if reset_button.button("Reset Data"):
         reset(horse_race_df, plot_container)
 
+def run_simulation(run_button, horse_race_df, date_display, plot_container):
     while run_button and (get_end_date() == "" or get_end_date() < horse_race_df['date'].max()):
         update_session_state(horse_race_df)
         update_chart(horse_race_df, plot_container)
-        date.write("Current Date: " + str(get_end_date())[:10])
+        date_display.write("Current Date: " + str(get_end_date())[:10])
         time.sleep(0.25)
         st.markdown("")
 
-    # for paused version
+def update_paused_state(horse_race_df, date_display, plot_container):
     if 'end_date' not in st.session_state:
-        horse_race_df
         st.session_state.end_date = horse_race_df['date'].min() - timedelta(1)
-
-    # when paused
     update_chart(horse_race_df, plot_container)
-    # update date
-    date.write("Current Date: " + str(get_end_date())[:10])
+    date_display.write("Current Date: " + str(get_end_date())[:10])
+
+def run():
+    setup_page()
+    clear_previous_page()
+    horse_race_df = st.session_state.combined_df
+    run_button, date_display, plot_container, reset_button = create_controls()
+    reset_if_requested(reset_button, horse_race_df, plot_container)
+    run_simulation(run_button, horse_race_df, date_display, plot_container)
+    update_paused_state(horse_race_df, date_display, plot_container)
 
 if __name__ == "__main__":
     run()

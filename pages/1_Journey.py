@@ -1,24 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from PIL import Image
 import plotly.express as px
 from datetime import timedelta
 import time
 from streamlit.logger import get_logger
+from utils import create_header_triplet, initialise_session_states
+
 
 LOGGER = get_logger(__name__)
-
-
-# Processing dataframe functions
-def pre_process_df(df):
-    """
-    Any standard pre-processing of df
-    for all charts
-    """
-    # datetime
-    df['date'] = pd.to_datetime(df['date'])
-    return df
 
 def select_member_df(df):
     return df[df['Member'] == st.session_state.member]
@@ -107,104 +97,93 @@ def update_summary_stats(df, date, total_euro, unique_boni):
     unique_boni.write("Tried " + str(get_unique_boni(df)) + " Boni")
 
 
-def run():
-    st.set_page_config(
-        page_title="Journey",
-        page_icon="🗺️",
-        layout="wide"
-    )
-  # inter page variables
-    if 'member' not in st.session_state:
-        st.session_state.member = 'Ben'
-    # list of members
-    if 'members' not in st.session_state:
-        # st.session_state.members = ('Ben', 'Hubert', 'Kasia', 'Tonda', 'Tomas', 
-        #                             'Oskar', 'Linn', 'Sofia')
-        st.session_state.members = ('Ben', 'Oskar', 'Tonda')
-        
-    if 'combined_df' not in st.session_state:
-        combined_df = pre_process_df(pd.read_csv('data/combined_data2.csv'))
-        st.session_state.combined_df = combined_df
+def setup_header():
+    """Initializes session states and header UI."""
+    st.set_page_config(page_title="Journey", page_icon="🗺️", layout="wide")
+    initialise_session_states()
+    create_header_triplet()
 
-    if 'last_recorded_date' not in st.session_state:
-        st.session_state.last_recorded_date = st.session_state.combined_df['date'].max()
-
-    # TODO: this is on every page - abstract it
-    # Displays title and image
-    img, heading, member = st.columns([1,8, 2])
-    # image
-    image_path = "boni-removebg-preview.png"
-    pillow_image = Image.open(image_path)
-    scalar = 0.55
-    new_image = pillow_image.resize((int(177*scalar), int(197*scalar)))
-    img.image(new_image)
-    # title
-    heading.markdown(" # Študentska **prehrana**")
-
-    # Read in data
-    # Load data
+def load_data():
+    """Loads and processes the dataset."""
     df = select_member_df(st.session_state.combined_df)
-    
-    # Create dataframe for journey plots
-    df_cumsum = cum_sum_restaurant_visits(df)
-    df_cumsum = fill_missing_dates(df_cumsum)
+    df_cumsum = fill_missing_dates(cum_sum_restaurant_visits(df))
+    return df, df_cumsum
 
-    # Place buttons and summary stats at top of page
-    date, total_euro_placeholder, unique_boni_placeholder, reset_button, run_button_placeholder, member = st.columns(6)
-    # Clear columns
-    date.empty()
-    total_euro_placeholder.empty()
-    unique_boni_placeholder.empty() 
-    reset_button.empty()
-    run_button_placeholder.empty()
+def on_member_change():
+    st.session_state.member = st.session_state.selected_member
 
-    member.selectbox(
-        label = 'Piran Member',
-        options = st.session_state.members,
-        key='member',
-        index = st.session_state.members.index(st.session_state.member))
+def setup_members_select_box(select_box):
+    select_box.selectbox(
+        label='Who are you?',
+        options=st.session_state.members,
+        key='selected_member',
+        index=st.session_state.members.index(st.session_state.member), 
+        on_change=on_member_change 
+    )
 
-    # set up objects for top row
-    #total euro
-    total_euro = total_euro_placeholder.empty()
-    #unique boni tried
-    unique_boni = unique_boni_placeholder.empty()
-    # Checkbox for run/pause
-    run_button = run_button_placeholder.checkbox("Run / Pause", False)
-    # date placeholder
-    date = date.empty()
-    # Create an empty container for the dynamic plot
-    plot_container_stacked = st.empty()
-    plot_container_bar = st.empty()
+def setup_top_row_controls():
+    """Sets up placeholders for UI elements at the top of the page."""
+    date, total_euro, unique_boni, reset_button, run_button, member = st.columns(6)
 
-    # If reset button is pressed
-    # reset end date to beginning
-    # then update plots
-    if reset_button.button("Reset Data"):
+    setup_members_select_box(member)
+
+    return date, total_euro, unique_boni, reset_button, run_button
+
+def handle_reset(df_cumsum, plot_container_stacked, plot_container_bar):
+    """Handles the reset button functionality."""
+    if st.session_state.reset_button.button("Reset Data"):
         st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
         update_chart_stacked(df_cumsum, plot_container_stacked)
         update_chart_bar(df_cumsum, plot_container_bar)
 
-    # Continually update dynamic chart
-    while run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
-        # Update session state, summary stats and plots
+def run_simulation(df, df_cumsum, plot_container_stacked, plot_container_bar, date, total_euro, unique_boni):
+    """Runs the dynamic journey simulation."""
+    while st.session_state.run_button and (get_end_date() == "" or get_end_date() < df_cumsum['date'].max()):
         update_session_state(df_cumsum)
         update_summary_stats(df, date, total_euro, unique_boni)
         update_chart_stacked(df_cumsum, plot_container_stacked)
         update_chart_bar(df_cumsum, plot_container_bar)
-        # one day is 0.25 seconds
-        time.sleep(0.25)
+        time.sleep(0.25)  # Simulates time passing
         total_euro.empty()
         st.markdown("")
 
-    # For paused version
+def update_visuals(df, df_cumsum, plot_container_stacked, plot_container_bar, date, total_euro, unique_boni):
+    """Updates visuals when simulation is paused."""
     if 'end_date' not in st.session_state:
         st.session_state.end_date = df_cumsum['date'].min() - timedelta(1)
     update_chart_stacked(df_cumsum, plot_container_stacked)
     update_chart_bar(df_cumsum, plot_container_bar)
     update_summary_stats(df, date, total_euro, unique_boni)
 
+def run():
+    setup_header()
+    df, df_cumsum = load_data()
+
+    # Set up UI elements
+    date, total_euro, unique_boni, reset_button, run_button_placeholder = setup_top_row_controls()
+
+    # Clear columns
+    date = date.empty()
+    total_euro = total_euro.empty()
+    unique_boni = unique_boni.empty()
+    reset_button.empty()
+
+    run_button = run_button_placeholder.checkbox("Run / Pause", False)
+
+    plot_container_stacked, plot_container_bar = st.empty(), st.empty()
+
+    # Store button states in session state
+    st.session_state.reset_button = reset_button
+    st.session_state.run_button = run_button
+
+    # Handle reset button logic
+    handle_reset(df_cumsum, plot_container_stacked, plot_container_bar)
+
+    # Run simulation if active
+    run_simulation(df, df_cumsum, plot_container_stacked, plot_container_bar, date, total_euro, unique_boni)
+
+    # Update visuals when paused
+    update_visuals(df, df_cumsum, plot_container_stacked, plot_container_bar, date, total_euro, unique_boni)
+
 if __name__ == "__main__":
-    global journeyKey
-    journeyKey = 0
     run()
