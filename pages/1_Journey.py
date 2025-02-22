@@ -71,7 +71,7 @@ def update_chart_stacked(df_cumsum, plot_container):
                 category_orders={'Restaurant': df_melted.groupby('Restaurant')['Cumulative Visits'].sum().sort_values(ascending=False).index})
 
     # Update the container with the new plot
-    plot_container.plotly_chart(fig, use_container_width=True)
+    plot_container.plotly_chart(fig, use_container_width=True, key=f"bar_chart_{time.time()}")
 
 def update_chart_bar(df_cumsum, plot_container):
     # Get the subset of data up to the specified date
@@ -98,7 +98,7 @@ def update_chart_bar(df_cumsum, plot_container):
                 color_discrete_map=color_discrete_map)
 
     # Update the container with the new plot
-    plot_container.plotly_chart(fig, use_container_width=True)
+    plot_container.plotly_chart(fig, use_container_width=True, key=f"bar_chart_{time.time()}")
 
 def update_summary_stats(df, date, total_euro, unique_boni):
     # update top row
@@ -205,4 +205,6 @@ def run():
     update_summary_stats(df, date, total_euro, unique_boni)
 
 if __name__ == "__main__":
+    global journeyKey
+    journeyKey = 0
     run()

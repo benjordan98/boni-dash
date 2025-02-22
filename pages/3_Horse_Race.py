@@ -77,7 +77,7 @@ def update_chart(df, plot_container):
 
     # sort by members most boni
     # Update the container with the new plot
-    plot_container.plotly_chart(fig, use_container_width=True)
+    plot_container.plotly_chart(fig, use_container_width=True, key=f"bar_chart_{time.time()}")
 
 def reset(df, plot_container):
     st.session_state.end_date = df['date'].min() - timedelta(1)
