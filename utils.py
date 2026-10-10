@@ -49,6 +49,91 @@ def pre_process_df(df):
     df['date'] = pd.to_datetime(df['date'])
     return df
 
+def add_plotly_animation_controls(
+    fig,
+    frame_labels,
+    *,
+    button_y=-0.12,
+    button_yanchor="top",
+    slider_y=-0.4,
+    top_margin=0,
+    bottom_margin=240,
+):
+    """Add browser-side play, pause, and date-slider controls to a Plotly figure."""
+    frame_options = {
+        "frame": {"duration": 250, "redraw": False},
+        "transition": {"duration": 200},
+        "fromcurrent": True,
+        "mode": "immediate",
+    }
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": label,
+            "args": [
+                [label],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": False},
+                    "transition": {"duration": 0},
+                },
+            ],
+        }
+        for label in frame_labels
+    ]
+    buttons = [
+        {"label": "Play", "method": "animate", "args": [None, frame_options]},
+        {
+            "label": "Pause",
+            "method": "animate",
+            "args": [[None], {"mode": "immediate", "frame": {"duration": 0}}],
+        },
+        {
+            "label": "Restart",
+            "method": "animate",
+            "args": [
+                [frame_labels[0]],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": False},
+                    "transition": {"duration": 0},
+                },
+            ],
+        },
+    ]
+    button_positions = [(0, "left"), (0.5, "center"), (1, "right")]
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "showactive": False,
+                "x": x,
+                "y": button_y,
+                "xanchor": anchor,
+                "yanchor": button_yanchor,
+                "direction": "right",
+                "pad": {"t": 0, "b": 0},
+                "buttons": [button],
+            }
+            for button, (x, anchor) in zip(buttons, button_positions)
+        ],
+        sliders=[
+            {
+                "active": 0,
+                "currentvalue": {"prefix": "Date: "},
+                "steps": slider_steps,
+                "x": 0,
+                "len": 1,
+                "y": slider_y,
+                "xanchor": "left",
+                "yanchor": "top",
+                "pad": {"t": 0, "b": 0},
+            }
+        ],
+        margin={"t": top_margin, "b": bottom_margin},
+    )
+    return fig
+
 def initialise_session_states():
     if 'member' not in st.session_state:
         st.session_state.member = 'Ben'

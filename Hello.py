@@ -37,7 +37,7 @@ def run():
 
     setup_members_select_box(select_box)
     
-    st.write("👋 Welcome. This is a Mini Data App about the Piran Group's Boni Journey - data still pending on other mem. Enjoy 😋")
+    st.write("👋 Welcome. This is a Mini Data App about the Piran Group's Boni Journey - data still pending on other members. Enjoy 😋")
 
     display_member_image()
 

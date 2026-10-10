@@ -23,31 +23,39 @@ def boni_spend_per_month(df):
 
 def boni_usage_per_month(df):
     """
-    Takes standard df and 
-    returns a df with Used and Unused vouchers
-    by month
+    Takes standard df and returns a df with Used and Unused vouchers by month.
     """
-    # group data by month
-    by_month = df.groupby(df['date'].dt.to_period('M')).agg('count')['date']
-    df_by_month = pd.DataFrame(by_month)
-    df_by_month.columns = ['Used']
+    monthly = (
+        df.assign(month=df['date'].dt.to_period('M'))
+        .groupby('month')
+        .agg(Used=('date', 'count'))
+        .reindex(
+            pd.period_range(
+                start=df['date'].min().to_period('M'),
+                end=df['date'].max().to_period('M'),
+                freq='M'
+            ),
+            fill_value=0
+        )
+    )
 
-    # number of working days in each month
-    working_days = [21, 21, 19, 21, 20]
-    df_by_month['working_days'] = working_days
-    df_by_month['Unused'] = np.where(df_by_month['working_days'] < df_by_month['Used'], 0, df_by_month['working_days'] - df_by_month['Used'])
-    df_by_month.drop('working_days', axis = 1, inplace = True)
+    working_days = {
+        pd.Period('2023-10', freq='M'): 21,
+        pd.Period('2023-11', freq='M'): 21,
+        pd.Period('2023-12', freq='M'): 19,
+        pd.Period('2024-01', freq='M'): 21,
+        pd.Period('2024-02', freq='M'): 20,
+    }
 
-    df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
+    monthly = monthly.reset_index().rename(columns={'index': 'month_period'})
+    monthly['Monthly allowance'] = monthly['month_period'].map(working_days)
+    monthly['month_name'] = monthly['month_period'].dt.strftime('%b')
 
-    # Extract month names
-    df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
-    df_by_month.drop('date', axis = 1, inplace = True)
-
-    # convert to long format
-    df_by_month = pd.melt(df_by_month, id_vars=['month_name'], var_name='Utilisation')
-
-    return df_by_month
+    return (
+        monthly[['month_name', 'Used', 'Monthly allowance']]
+        .rename(columns={'Used': 'Redeemed'})
+        .melt(id_vars=['month_name'], var_name='Measure', value_name='value')
+    )
 
 # get Boni summary stats functions
 def get_top_boni(df):
@@ -118,45 +126,51 @@ def display_summary(df, col):
     col.text(f'🏆 Top Boni: {get_top_boni(df)}')
     col.text(f"🔢 Total Boni Trips: {df.shape[0]}")
     col.text(f"🆕 Unique Boni Tried: {len(df['restaurant'].unique())}")
+    col.text(f"💶 Total Boni Spend: €{df['discount_meal_price'].sum():.2f}")
     col.text(f"💶 Avg Meal Price: {round(df['discount_meal_price'].mean(), 2)} EURO")
     col.text(f"🗓️ Longest Streak: {get_longest_streak(df)} Days")
 
 def prepare_boni_cost_data(df):
     """Processes Boni spend per month data."""
     df_by_month = boni_spend_per_month(df)
-    df_by_month['Budget Status'] = np.where(df_by_month['cost'] > 50, 'Over-budget', 'Under-budget')
+    df_by_month['Budget Status'] = np.where(df_by_month['cost'] > 50, 'Over 50EUR budget', 'Under 50EURbudget')
     df_by_month['date'] = pd.to_datetime(df_by_month.index.astype(str))
-    df_by_month['month_name'] = df_by_month['date'].dt.strftime('%B')
+    df_by_month['month_name'] = df_by_month['date'].dt.strftime('%b')
     return df_by_month
 
 def display_boni_cost_by_month(df, col):
     """Displays Boni spending chart by month."""
     df_by_month = prepare_boni_cost_data(df)
-    month_order = ['October', 'November', 'December', 'January', 'February']
+    month_order = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb']
     chart = alt.Chart(df_by_month).mark_bar().encode(
-        y=alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month')),
-        x=alt.X('cost:Q', axis=alt.Axis(title='Cost (EURO)')),
-        color=alt.Color('Budget Status:N', scale=alt.Scale(domain=['Under-budget', 'Over-budget'], range=['#23BDF3', '#FFA500'])),
+        x=alt.X('month_name:N', sort=month_order, axis=alt.Axis(title='Month')),
+        y=alt.Y('cost:Q', axis=alt.Axis(title='Cost (EURO)')),
+        color=alt.Color('Budget Status:N', scale=alt.Scale(domain=['Under 50EURbudget', 'Over 50EUR budget'])),
         tooltip=['month_name:N', 'cost:Q', 'Budget Status:N']
     ).properties(title='Boni Cost by Month')
     col.altair_chart(chart, use_container_width=True)
 
 def prepare_boni_utilisation_data(df):
     """Processes Boni utilisation per month data."""
-    boni_usage_by_month = boni_usage_per_month(df)
-    boni_usage_by_month['month_name'] = boni_usage_by_month.index.astype(str)
-    return boni_usage_by_month
+    return boni_usage_per_month(df)
 
 def display_boni_utilisation_by_month(df, col):
     """Displays Boni utilisation by month."""
     boni_usage_by_month = prepare_boni_utilisation_data(df)
-    month_order = ['October', 'November', 'December', 'January', 'February']
+    month_order = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb']
+
     chart = alt.Chart(boni_usage_by_month).mark_bar().encode(
-        y=alt.Y('month_name:N', sort=month_order, axis=alt.Axis(title='Month')),
-        x="value",
-        color=alt.Color('Utilisation:N', scale=alt.Scale(domain=['Unused', 'Used'], range=['#FFA500', '#23BDF3'])),
-        order=alt.Order('Utilisation', sort='descending')
-    ).properties(title="Boni Utilisation by Month")
+        x=alt.X('month_name:N', sort=month_order, axis=alt.Axis(title='Month')),
+        xOffset=alt.XOffset('Measure:N', sort=['Monthly allowance', 'Redeemed']),
+        y=alt.Y('value:Q', axis=alt.Axis(title='Credits')),
+        color=alt.Color(
+            'Measure:N',
+            sort=['Monthly allowance', 'Redeemed'],
+            scale=alt.Scale(domain=['Monthly allowance', 'Redeemed'], range=['#FFA500', '#23BDF3'])
+        ),
+        tooltip=['month_name:N', 'Measure:N', 'value:Q']
+    ).properties(title='Boni Vouchers: Allowance vs Redeemed')
+
     col.altair_chart(chart, use_container_width=True)
 
 def run():
